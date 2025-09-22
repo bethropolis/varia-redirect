@@ -9,6 +9,7 @@
     "build": "vite build"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.2.4",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "@tailwindcss/vite": "^4.1.13",
     "svelte": "^5.0.0",
