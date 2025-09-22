@@ -15,6 +15,9 @@
  * @property {string[]} allowList - List of allowed website domains
  * @property {string[]} disallowedExtensions - List of file extensions to not redirect
  * @property {HeaderItem[]} persistentHeaders - Headers to add to all downloads
+ * @property {string} downloadDirectory - The base directory for downloads
+ * @property {boolean} organizeByDomain - Whether to create a subfolder for the domain
+ * @property {boolean} organizeByDate - Whether to create a subfolder for the date
  */
 
 /**
@@ -33,6 +36,9 @@ export const defaultSettings = {
   persistentHeaders: [
     { key: "User-Agent", value: "Varia-Redirect-Extension/1.0" },
   ],
+  downloadDirectory: "",
+  organizeByDomain: false,
+  organizeByDate: false,
 };
 
 /**
@@ -72,5 +78,17 @@ export function parseSettings(data) {
     persistentHeaders: Array.isArray(data.persistentHeaders)
       ? data.persistentHeaders
       : defaultSettings.persistentHeaders,
+    downloadDirectory:
+      typeof data.downloadDirectory === "string"
+        ? data.downloadDirectory
+        : defaultSettings.downloadDirectory,
+    organizeByDomain:
+      typeof data.organizeByDomain === "boolean"
+        ? data.organizeByDomain
+        : defaultSettings.organizeByDomain,
+    organizeByDate:
+      typeof data.organizeByDate === "boolean"
+        ? data.organizeByDate
+        : defaultSettings.organizeByDate,
   };
 }
