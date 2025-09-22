@@ -26,6 +26,9 @@ dist-ssr
 # Config files
 .webextrc
 .webextrc.*
+.env
 
 # dump files
 codebase.md
+guide/
+

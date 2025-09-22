@@ -1,6 +1,9 @@
 {
   "{{chrome}}.manifest_version": 3,
   "{{firefox}}.manifest_version": 2,
+  "name": "Varia Redirect",
+  "version": "1.0.0",
+  "description": "Redirect browser downloads to a local Varia (Aria2) instance with advanced filtering.",
   "icons": {
     "16": "icon/16.png",
     "32": "icon/32.png",
@@ -8,14 +11,35 @@
     "96": "icon/96.png",
     "128": "icon/128.png"
   },
+  "permissions": [
+    "downloads",
+    "storage",
+    "notifications",
+    "tabs",
+    "<all_urls>"
+  ],
+  "{{chrome}}.host_permissions": ["*://*/*"],
+
   "{{chrome}}.action": {
-    "default_popup": "src/popup.html"
+    "default_popup": "src/popup.html",
+    "default_icon": "icon/48.png"
   },
+
   "{{firefox}}.browser_action": {
-    "default_popup": "src/popup.html"
+    "default_popup": "src/popup.html",
+    "default_icon": "icon/48.png"
+  },
+  "{{firefox}}.browser_specific_settings": {
+    "gecko": {
+      "id": "varia-redirect@my-domain.com"
+    }
   },
   "background": {
     "{{chrome}}.service_worker": "src/background.js",
     "{{firefox}}.scripts": ["src/background.js"]
+  },
+  "options_ui": {
+    "page": "src/options.html",
+    "open_in_tab": true
   }
 }
