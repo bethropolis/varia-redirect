@@ -14,44 +14,82 @@
     // --- Derived State (these automatically update when their dependencies change) ---
     const isDarkMode = $derived($settings.theme === "dark");
 
-    const isCurrentSiteBlocked = $derived(
+    const isCurrentSiteOnBlocklist = $derived(
         currentTabDomain
             ? $settings.blockList.includes(currentTabDomain)
             : false,
     );
 
+    const isCurrentSiteOnAllowlist = $derived(
+        currentTabDomain
+            ? $settings.allowList.includes(currentTabDomain)
+            : false,
+    );
+
+    // The status message is now aware of the filter mode.
     const statusMessage = $derived.by(() => {
         if (!$settings.enabled) return "Redirect is disabled.";
-        if (isCurrentSiteBlocked) return "This site is on the blocklist.";
-        return "Active and ready to redirect.";
+
+        if ($settings.filterMode === "blocklist") {
+            return isCurrentSiteOnBlocklist
+                ? "This site is on the blocklist."
+                : "Active and ready to redirect.";
+        } else {
+            // Allowlist mode
+            return isCurrentSiteOnAllowlist
+                ? "This site is on the allowlist."
+                : "This site is NOT on the allowlist.";
+        }
     });
+
+    // Dynamically set the button's text, color, and disabled state based on context.
+    const actionButtonText = $derived.by(() => {
+        if ($settings.filterMode === "blocklist") {
+            return isCurrentSiteOnBlocklist
+                ? "Site is Blocked"
+                : "Block Current Site";
+        } else {
+            // Allowlist mode
+            return isCurrentSiteOnAllowlist
+                ? "Site is Allowed"
+                : "Allow Current Site";
+        }
+    });
+
+    const actionButtonDisabled = $derived.by(() => {
+        if (!currentTabDomain) return true;
+        if ($settings.filterMode === "blocklist")
+            return isCurrentSiteOnBlocklist;
+        return isCurrentSiteOnAllowlist;
+    });
+
+    const actionButtonColorClass = $derived(
+        $settings.filterMode === "blocklist"
+            ? "bg-red-600 hover:bg-red-700 focus:ring-red-500"
+            : "bg-green-600 hover:bg-green-700 focus:ring-green-500",
+    );
 
     // --- onMount Lifecycle: This runs once when the popup is opened ---
     $effect(() => {
+        // Connect to the background script to signal that the popup is open.
+        // This is used to clear the session cookie if the popup is closed.
         browser.runtime.connect({ name: "popup" });
 
-        // Apply the correct theme (light/dark) to the popup's HTML
         document.documentElement.classList.toggle("dark", isDarkMode);
-
-        // Asynchronously check the connection to the Aria2 server
         testAria2Connection($settings.rpcUrl).then((success) => {
             connectionStatus = success ? "success" : "failure";
         });
-
         getCurentTab();
     });
 
     async function getCurentTab() {
-        // Get the domain of the currently active tab
         try {
             const tabs = await browser.tabs.query({
                 active: true,
                 currentWindow: true,
             });
-            const currentTab = tabs[0];
-            if (currentTab && currentTab.url) {
-                const url = new URL(currentTab.url);
-                // We only care about actual websites, not internal browser pages
+            if (tabs[0]?.url) {
+                const url = new URL(tabs[0].url);
                 if (url.protocol.startsWith("http")) {
                     currentTabDomain = url.hostname;
                 }
@@ -69,10 +107,13 @@
         }));
     }
 
-    function blockCurrentSite() {
-        if (currentTabDomain && !isCurrentSiteBlocked) {
-            addToList("blockList", currentTabDomain);
-        }
+    // This single function now handles both blocking and allowing.
+    function handleSiteActionButtonClick() {
+        if (!currentTabDomain) return;
+
+        const listToUpdate =
+            $settings.filterMode === "blocklist" ? "blockList" : "allowList";
+        addToList(listToUpdate, currentTabDomain);
     }
 
     function openOptionsPage() {
@@ -94,14 +135,13 @@
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
-                >
-                    <path
+                    ><path
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
                         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                    />
-                </svg>
+                    ></path></svg
+                >
             </div>
             <h1 class="text-lg font-bold">Varia Redirect</h1>
         </div>
@@ -136,11 +176,7 @@
             {connectionStatus === 'unknown' && $settings.enabled
                 ? 'bg-yellow-400 animate-pulse'
                 : ''}
-            {!(connectionStatus === 'unknown' && $settings.enabled) &&
-            !$settings.enabled
-                ? 'bg-gray-400'
-                : ''}
-        "
+            {!$settings.enabled ? 'bg-gray-400' : ''}"
             title="Aria2 Connection Status"
         ></div>
         <span>{statusMessage}</span>
@@ -149,30 +185,24 @@
     <!-- Main Actions -->
     <section class="space-y-3">
         <button
-            onclick={blockCurrentSite}
-            disabled={!currentTabDomain || isCurrentSiteBlocked}
-            class="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
+            onclick={handleSiteActionButtonClick}
+            disabled={actionButtonDisabled}
+            class="w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed {actionButtonColorClass}"
         >
+            <!-- SVG Icon can also be dynamic if you want different icons -->
             <svg
                 class="w-5 h-5 mr-2"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-            >
-                <path
+                ><path
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
                     d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                ></path>
-            </svg>
-            {#if isCurrentSiteBlocked}
-                Site is Blocked
-            {:else if !currentTabDomain}
-                Cannot Block Site
-            {:else}
-                Block Current Site
-            {/if}
+                ></path></svg
+            >
+            {actionButtonText}
         </button>
 
         <div>
@@ -202,7 +232,6 @@
             title="Toggle theme"
         >
             {#if isDarkMode}
-                <!-- Sun Icon -->
                 <svg
                     class="w-5 h-5"
                     fill="none"
@@ -216,7 +245,6 @@
                     ></path></svg
                 >
             {:else}
-                <!-- Moon Icon -->
                 <svg
                     class="w-5 h-5"
                     fill="none"
@@ -236,7 +264,6 @@
             class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
             title="Open full settings"
         >
-            <!-- Cog Icon -->
             <svg
                 class="w-5 h-5"
                 fill="none"

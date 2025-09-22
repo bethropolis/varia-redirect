@@ -74,20 +74,46 @@ async function sendToAria2(downloadItem, settings, session) {
   // Construct the headers array
   const headers = settings.persistentHeaders.map((h) => `${h.key}: ${h.value}`);
 
-  // Add Referer if it exists
   if (downloadItem.referrer) {
     headers.push(`Referer: ${downloadItem.referrer}`);
   }
-
-  // Add temporary session cookie if it exists
   if (session.tempCookie) {
     headers.push(`Cookie: ${session.tempCookie}`);
   }
 
+  // --- NEW: Download Directory Logic ---
+  let finalDir = settings.downloadDirectory || "";
+
+  // Append date subfolder if enabled
+  if (settings.organizeByDate) {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    const dateSubfolder = `${year}-${month}-${day}`;
+    // Use path joining that works on Linux/macOS
+    finalDir = finalDir ? `${finalDir}/${dateSubfolder}` : dateSubfolder;
+  }
+
+  // Append domain subfolder if enabled
+  if (settings.organizeByDomain) {
+    const domain = new URL(downloadItem.url).hostname;
+    finalDir = finalDir ? `${finalDir}/${domain}` : domain;
+  }
+  // --- END of New Logic ---
+
+  const filename = downloadItem.filename.split("/").pop().split("\\").pop();
+
   const params = {
-    out: downloadItem.filename,
+    out: filename,
     header: headers,
   };
+
+  // Only add the 'dir' parameter if we've constructed a path.
+  // This prevents sending an empty 'dir', which could cause errors.
+  if (finalDir) {
+    params.dir = finalDir;
+  }
 
   console.log("Sending to Aria2 with params:", params);
 
@@ -104,28 +130,22 @@ async function sendToAria2(downloadItem, settings, session) {
     });
 
     const data = await response.json();
-
-    if (data.error) {
-      throw new Error(data.error.message);
-    }
+    if (data.error) throw new Error(data.error.message);
 
     if (data.result) {
       console.log("Aria2 accepted download:", data.result);
-      // Cancel the original browser download and remove it from history
       await browser.downloads.cancel(downloadItem.id);
       await browser.downloads.erase({ id: downloadItem.id });
     }
   } catch (error) {
     console.error("Failed to send to Aria2:", error);
-    // Optional: Notify the user of the failure
     browser.notifications.create(`aria2-fail-${downloadItem.id}`, {
       type: "basic",
       iconUrl: browser.runtime.getURL("icon/128.png"),
       title: "Aria2 Redirect Failed",
-      message: `Could not send download to Aria2. Check if it's running. Error: ${error.message}`,
+      message: `Could not send download to Aria2. Error: ${error.message}`,
     });
   } finally {
-    // Clear the temporary cookie after the attempt
     await browser.storage.session.set({ tempCookie: "" });
   }
 }

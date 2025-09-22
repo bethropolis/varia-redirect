@@ -27,7 +27,8 @@
 
   "{{firefox}}.browser_action": {
     "default_popup": "src/popup.html",
-    "default_icon": "icon/48.png"
+    "default_icon": "icon/48.png",
+    "default_area": "navbar"
   },
   "{{firefox}}.browser_specific_settings": {
     "gecko": {
