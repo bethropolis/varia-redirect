@@ -46,7 +46,7 @@
                     <span class="flex flex-col">
                         <span class="font-medium">Blocklist Mode</span>
                         <span class="text-sm text-gray-500 dark:text-gray-400"
-                            >Block downloads from specified sites.</span
+                            >Skip downloads from specified sites.</span
                         >
                     </span>
                 </label>

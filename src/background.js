@@ -8,15 +8,12 @@ browser.runtime.onInstalled.addListener((details) => {
 
 // Listen for when a download begins
 browser.downloads.onCreated.addListener(async (downloadItem) => {
-  // 1. Get current settings and temporary session data
   const settings = await browser.storage.sync.get(null);
   const session = await browser.storage.session.get({ tempCookie: "" });
 
   console.log("Varia Redirect: Download created:", downloadItem);
   console.log("settings", settings);
   console.log("session", session);
-
-  // --- Start Filtering Logic ---
 
   // Rule 1: Is the extension globally disabled?
   if (!settings.enabled) {
@@ -26,9 +23,9 @@ browser.downloads.onCreated.addListener(async (downloadItem) => {
 
   // Rule 2: Does the download have a valid URL?
   if (!downloadItem.url || !downloadItem.url.startsWith("http")) {
-    return; // Ignore downloads without a valid web URL (e.g., blobs)
+    return;
   }
-  const downloadUrl = new URL(downloadItem.url);
+  const downloadUrl = new URL(downloadItem.referrer);
   const domain = downloadUrl.hostname;
 
   // Rule 3: Check against Blocklist/Allowlist
@@ -67,11 +64,11 @@ browser.downloads.onCreated.addListener(async (downloadItem) => {
   }
 
   // --- If all checks pass, send to Aria2 ---
+  console.log(downloadItem, settings, session);
   sendToAria2(downloadItem, settings, session);
 });
 
 async function sendToAria2(downloadItem, settings, session) {
-  // Construct the headers array
   const headers = settings.persistentHeaders.map((h) => `${h.key}: ${h.value}`);
 
   if (downloadItem.referrer) {
@@ -81,26 +78,23 @@ async function sendToAria2(downloadItem, settings, session) {
     headers.push(`Cookie: ${session.tempCookie}`);
   }
 
-  // --- NEW: Download Directory Logic ---
   let finalDir = settings.downloadDirectory || "";
 
-  // Append date subfolder if enabled
+  // Append date subfolder if enabled (currently the feature may not work)
   if (settings.organizeByDate) {
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, "0");
     const day = String(today.getDate()).padStart(2, "0");
     const dateSubfolder = `${year}-${month}-${day}`;
-    // Use path joining that works on Linux/macOS
     finalDir = finalDir ? `${finalDir}/${dateSubfolder}` : dateSubfolder;
   }
 
-  // Append domain subfolder if enabled
+  // Append domain subfolder if enabled (same here)
   if (settings.organizeByDomain) {
     const domain = new URL(downloadItem.url).hostname;
     finalDir = finalDir ? `${finalDir}/${domain}` : domain;
   }
-  // --- END of New Logic ---
 
   const filename = downloadItem.filename.split("/").pop().split("\\").pop();
 
@@ -109,8 +103,6 @@ async function sendToAria2(downloadItem, settings, session) {
     header: headers,
   };
 
-  // Only add the 'dir' parameter if we've constructed a path.
-  // This prevents sending an empty 'dir', which could cause errors.
   if (finalDir) {
     params.dir = finalDir;
   }
@@ -150,7 +142,6 @@ async function sendToAria2(downloadItem, settings, session) {
   }
 }
 
-// A simple listener to clear the session cookie when the popup closes.
 browser.runtime.onConnect.addListener((port) => {
   if (port.name === "popup") {
     port.onDisconnect.addListener(async () => {

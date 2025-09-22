@@ -1,4 +1,5 @@
 <script>
+    import Github from "../components/common/github.svelte";
     import DownloadSettings from "../components/options/DownloadSettings.svelte";
     import FilterSettings from "../components/options/FilterSettings.svelte";
     import GeneralSettings from "../components/options/GeneralSettings.svelte";
@@ -88,6 +89,16 @@
 
         <!-- Main Content Area -->
         <main class="flex-1 p-8">
+            <div class="flex flex-row-reverse">
+                <a
+                    href="https://github.com/bethropolis/varia-redirect"
+                    title="Visit the GitHub repository"
+                    class="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                    target="_blank"
+                >
+                    <Github class="w-5 h-5" />
+                </a>
+            </div>
             {#if activeTab === "general"}
                 <GeneralSettings />
             {:else if activeTab === "downloads"}
