@@ -4,7 +4,64 @@ browser.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
     browser.storage.sync.set({ enabled: true });
   }
+
+  console.log(
+    "Extension installed/updated: testing Aria2 connection for icon.",
+  );
+  testConnectionAndSetIcon();
 });
+
+browser.runtime.onStartup.addListener(() => {
+  console.log("Browser startup: testing Aria2 connection for icon.");
+  testConnectionAndSetIcon();
+});
+
+/**
+ * Updates the browser action icon based on connection status.
+ * @param {boolean} isConnected - Whether the connection to Aria2 is successful.
+ */
+function updateBrowserIcon(isConnected) {
+  const status = isConnected ? "connected" : "disconnected";
+  const iconPaths = {
+    16: `icon/icon-${status}-16.png`,
+    32: `icon/icon-${status}-32.png`,
+    48: `icon/icon-${status}-48.png`,
+    128: `icon/icon-${status}-128.png`,
+  };
+
+  // The webextension-polyfill normalizes this to browser.action or browser.browserAction
+  browser.action.setIcon({ path: iconPaths });
+}
+
+/**
+ * Tests the connection to the Aria2 RPC server and updates the icon.
+ */
+async function testConnectionAndSetIcon() {
+  try {
+    const settings = await browser.storage.sync.get("rpcUrl");
+    if (!settings.rpcUrl) {
+      updateBrowserIcon(false);
+      return;
+    }
+
+    const response = await fetch(settings.rpcUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: "icon-test",
+        method: "aria2.getVersion",
+        params: [],
+      }),
+    });
+
+    const data = await response.json();
+    updateBrowserIcon(!!data.result);
+  } catch (error) {
+    console.error("Icon connection test failed:", error);
+    updateBrowserIcon(false);
+  }
+}
 
 // Listen for when a download begins
 browser.downloads.onCreated.addListener(async (downloadItem) => {
@@ -148,5 +205,12 @@ browser.runtime.onConnect.addListener((port) => {
       await browser.storage.session.set({ tempCookie: "" });
       console.log("Popup closed, temporary cookie cleared.");
     });
+  }
+});
+
+browser.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === "sync" && changes.rpcUrl) {
+    console.log("RPC URL changed: re-testing connection for icon.");
+    testConnectionAndSetIcon();
   }
 });

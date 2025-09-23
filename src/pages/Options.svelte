@@ -43,22 +43,11 @@
             class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex-shrink-0 min-h-screen"
         >
             <div class="flex items-center mb-8">
-                <div
-                    class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md mr-3"
-                >
-                    <svg
-                        class="w-4 h-4 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        ><path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                        ></path></svg
-                    >
-                </div>
+                <img
+                    src="/icon/icon-disconected-32.png"
+                    alt="Varia Redirect"
+                    class="w-8 h-8 rounded-lg shadow-md mr-3"
+                />
                 <h1 class="text-xl font-bold">Varia Redirect</h1>
             </div>
 

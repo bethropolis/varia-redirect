@@ -127,22 +127,11 @@
     <!-- Header: Title and Main On/Off Toggle -->
     <header class="flex justify-between items-center mb-4">
         <div class="flex items-center">
-            <div
-                class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-md mr-3"
-            >
-                <svg
-                    class="w-4 h-4 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    ><path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                    ></path></svg
-                >
-            </div>
+            <img
+                src="/icon/icon-disconected-32.png"
+                alt="Varia Redirect"
+                class="w-8 h-8 rounded-full shadow-md mr-3"
+            />
             <h1 class="text-lg font-bold">Varia Redirect</h1>
         </div>
 
