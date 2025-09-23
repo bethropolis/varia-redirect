@@ -5,29 +5,34 @@
   "version": "1.0.0",
   "description": "Redirect browser downloads to a local Varia (Aria2) instance with advanced filtering.",
   "icons": {
-    "16": "icon/16.png",
-    "32": "icon/32.png",
-    "48": "icon/48.png",
-    "96": "icon/96.png",
-    "128": "icon/128.png"
+    "16": "icon/icon-disconnected-16.png",
+    "32": "icon/icon-disconnected-32.png",
+    "48": "icon/icon-disconnected-48.png",
+    "128": "icon/icon-disconnected-128.png",
+    "256": "icon/icon-disconnected-256.png"
   },
-  "permissions": [
+  "permissions": ["downloads", "storage", "notifications", "tabs"],
+  "{{chrome}}.host_permissions": ["<all_urls>"],
+  "{{firefox}}.permissions": [
     "downloads",
     "storage",
     "notifications",
     "tabs",
     "<all_urls>"
   ],
-  "{{chrome}}.host_permissions": ["*://*/*"],
 
   "{{chrome}}.action": {
     "default_popup": "src/popup.html",
-    "default_icon": "icon/48.png"
+    "default_icon": {
+      "16": "icon/icon-disconnected-16.png",
+      "32": "icon/icon-disconnected-32.png",
+      "48": "icon/icon-disconnected-48.png"
+    }
   },
 
   "{{firefox}}.browser_action": {
     "default_popup": "src/popup.html",
-    "default_icon": "icon/48.png",
+    "default_icon": "icon/icon-disconnected-48.png",
     "default_area": "navbar"
   },
   "{{firefox}}.browser_specific_settings": {
