@@ -4,19 +4,73 @@ browser.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
     browser.storage.sync.set({ enabled: true });
   }
+
+  console.log(
+    "Extension installed/updated: testing Aria2 connection for icon.",
+  );
+  testConnectionAndSetIcon();
 });
+
+browser.runtime.onStartup.addListener(() => {
+  console.log("Browser startup: testing Aria2 connection for icon.");
+  testConnectionAndSetIcon();
+});
+
+/**
+ * Updates the browser action icon based on connection status.
+ * @param {boolean} isConnected - Whether the connection to Aria2 is successful.
+ */
+function updateBrowserIcon(isConnected) {
+  const status = isConnected ? "connected" : "disconnected";
+  const iconPaths = {
+    16: `icon/icon-${status}-16.png`,
+    32: `icon/icon-${status}-32.png`,
+    48: `icon/icon-${status}-48.png`,
+    128: `icon/icon-${status}-128.png`,
+  };
+
+  // The webextension-polyfill normalizes this to browser.action or browser.browserAction
+  browser.action.setIcon({ path: iconPaths });
+}
+
+/**
+ * Tests the connection to the Aria2 RPC server and updates the icon.
+ */
+async function testConnectionAndSetIcon() {
+  try {
+    const settings = await browser.storage.sync.get("rpcUrl");
+    if (!settings.rpcUrl) {
+      updateBrowserIcon(false);
+      return;
+    }
+
+    const response = await fetch(settings.rpcUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: "icon-test",
+        method: "aria2.getVersion",
+        params: [],
+      }),
+    });
+
+    const data = await response.json();
+    updateBrowserIcon(!!data.result);
+  } catch (error) {
+    console.error("Icon connection test failed:", error);
+    updateBrowserIcon(false);
+  }
+}
 
 // Listen for when a download begins
 browser.downloads.onCreated.addListener(async (downloadItem) => {
-  // 1. Get current settings and temporary session data
   const settings = await browser.storage.sync.get(null);
   const session = await browser.storage.session.get({ tempCookie: "" });
 
   console.log("Varia Redirect: Download created:", downloadItem);
   console.log("settings", settings);
   console.log("session", session);
-
-  // --- Start Filtering Logic ---
 
   // Rule 1: Is the extension globally disabled?
   if (!settings.enabled) {
@@ -26,9 +80,9 @@ browser.downloads.onCreated.addListener(async (downloadItem) => {
 
   // Rule 2: Does the download have a valid URL?
   if (!downloadItem.url || !downloadItem.url.startsWith("http")) {
-    return; // Ignore downloads without a valid web URL (e.g., blobs)
+    return;
   }
-  const downloadUrl = new URL(downloadItem.url);
+  const downloadUrl = new URL(downloadItem.referrer);
   const domain = downloadUrl.hostname;
 
   // Rule 3: Check against Blocklist/Allowlist
@@ -67,11 +121,11 @@ browser.downloads.onCreated.addListener(async (downloadItem) => {
   }
 
   // --- If all checks pass, send to Aria2 ---
+  console.log(downloadItem, settings, session);
   sendToAria2(downloadItem, settings, session);
 });
 
 async function sendToAria2(downloadItem, settings, session) {
-  // Construct the headers array
   const headers = settings.persistentHeaders.map((h) => `${h.key}: ${h.value}`);
 
   if (downloadItem.referrer) {
@@ -81,26 +135,23 @@ async function sendToAria2(downloadItem, settings, session) {
     headers.push(`Cookie: ${session.tempCookie}`);
   }
 
-  // --- NEW: Download Directory Logic ---
   let finalDir = settings.downloadDirectory || "";
 
-  // Append date subfolder if enabled
+  // Append date subfolder if enabled (currently the feature may not work)
   if (settings.organizeByDate) {
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, "0");
     const day = String(today.getDate()).padStart(2, "0");
     const dateSubfolder = `${year}-${month}-${day}`;
-    // Use path joining that works on Linux/macOS
     finalDir = finalDir ? `${finalDir}/${dateSubfolder}` : dateSubfolder;
   }
 
-  // Append domain subfolder if enabled
+  // Append domain subfolder if enabled (same here)
   if (settings.organizeByDomain) {
     const domain = new URL(downloadItem.url).hostname;
     finalDir = finalDir ? `${finalDir}/${domain}` : domain;
   }
-  // --- END of New Logic ---
 
   const filename = downloadItem.filename.split("/").pop().split("\\").pop();
 
@@ -109,8 +160,6 @@ async function sendToAria2(downloadItem, settings, session) {
     header: headers,
   };
 
-  // Only add the 'dir' parameter if we've constructed a path.
-  // This prevents sending an empty 'dir', which could cause errors.
   if (finalDir) {
     params.dir = finalDir;
   }
@@ -150,12 +199,18 @@ async function sendToAria2(downloadItem, settings, session) {
   }
 }
 
-// A simple listener to clear the session cookie when the popup closes.
 browser.runtime.onConnect.addListener((port) => {
   if (port.name === "popup") {
     port.onDisconnect.addListener(async () => {
       await browser.storage.session.set({ tempCookie: "" });
       console.log("Popup closed, temporary cookie cleared.");
     });
+  }
+});
+
+browser.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === "sync" && changes.rpcUrl) {
+    console.log("RPC URL changed: re-testing connection for icon.");
+    testConnectionAndSetIcon();
   }
 });

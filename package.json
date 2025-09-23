@@ -2,11 +2,19 @@
   "name": "varia-redirect",
   "private": true,
   "version": "1.0.0",
+  "description": "Redirect browser downloads to a local Varia (Aria2) instance with advanced filtering.",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "dev:web": "VITE_WEB_EXTENSION=false vite",
-    "build": "vite build"
+    "build": "vite build",
+    "build:firefox": "VITE_BROWSER=firefox vite build && rm -rf dist-firefox && cp -r dist dist-firefox",
+    "build:chrome": "VITE_BROWSER=chrome vite build && rm -rf dist-chrome && cp -r dist dist-chrome",
+    "build:all": "npm run build:firefox && npm run build:chrome",
+    "build:web": "VITE_WEB_EXTENSION=false vite build",
+    "package:firefox": "npm run build:firefox && cd dist-firefox && zip -r ../varia-redirect-firefox.zip .",
+    "package:chrome": "npm run build:chrome && cd dist-chrome && zip -r ../varia-redirect-chrome.zip .",
+    "package:all": "npm run build:all && npm run package:firefox && npm run package:chrome"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",

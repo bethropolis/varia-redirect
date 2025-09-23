@@ -18,6 +18,7 @@ function generateManifest() {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
 
+  const browser = env.VITE_BROWSER || "firefox";
   const rawStart = env.VITE_START_URL || "";
   const startUrls = rawStart
     .split(",")
@@ -31,12 +32,16 @@ export default defineConfig(({ mode }) => {
       ...(env.VITE_WEB_EXTENSION !== "false"
         ? [
             webExtension({
-              browser: "firefox",
+              browser: browser,
               manifest: generateManifest,
-              watchFilePaths: ["package.json", "manifest.json"],
-              webExtConfig: {
-                startUrl: startUrls.length > 0 ? startUrls : undefined,
-              },
+              watchFilePaths: ["package.json", "src/manifest.json"],
+              ...(mode === "development" && startUrls.length > 0
+                ? {
+                    webExtConfig: {
+                      startUrl: startUrls,
+                    },
+                  }
+                : {}),
             }),
           ]
         : []),
@@ -48,9 +53,7 @@ export default defineConfig(({ mode }) => {
           },
           build: {
             rollupOptions: {
-              input: {
-                main: "public/index.html",
-              },
+              input: "index.html",
             },
           },
         }
