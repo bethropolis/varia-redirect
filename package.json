@@ -11,7 +11,7 @@
     "build:firefox": "VITE_BROWSER=firefox vite build && rm -rf dist-firefox && cp -r dist dist-firefox",
     "build:chrome": "VITE_BROWSER=chrome vite build && rm -rf dist-chrome && cp -r dist dist-chrome",
     "build:all": "npm run build:firefox && npm run build:chrome",
-    "build:web": "VITE_WEB_EXTENSION=false vite build",
+    "build:web": "VITE_WEB_EXTENSION=false vite build --base=/varia-redirect/",
     "package:firefox": "npm run build:firefox && cd dist-firefox && zip -r ../varia-redirect-firefox.zip .",
     "package:chrome": "npm run build:chrome && cd dist-chrome && zip -r ../varia-redirect-chrome.zip .",
     "package:all": "npm run build:all && npm run package:firefox && npm run package:chrome"
