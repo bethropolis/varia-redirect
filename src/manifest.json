@@ -2,7 +2,7 @@
   "{{chrome}}.manifest_version": 3,
   "{{firefox}}.manifest_version": 2,
   "name": "Varia Redirect",
-  "version": "1.0.0",
+  "version": "0.1.7",
   "description": "Redirect browser downloads to a local Varia (Aria2) instance with advanced filtering.",
   "icons": {
     "16": "icon/icon-disconnected-16.png",
