@@ -37,9 +37,13 @@
   },
   "{{firefox}}.browser_specific_settings": {
     "gecko": {
-      "id": "varia-redirect@my-domain.com"
+      "id": "bethropolis@outlook.com"
     }
   },
+  "{{chrome}}.content_security_policy": {
+    "extension_pages": "script-src 'self' 'unsafe-eval'; object-src 'self';"
+  },
+  "{{firefox}}.content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self';",
   "background": {
     "{{chrome}}.service_worker": "src/background.js",
     "{{firefox}}.scripts": ["src/background.js"]

@@ -29,8 +29,24 @@ function updateBrowserIcon(isConnected) {
     128: `icon/icon-${status}-128.png`,
   };
 
-  // The webextension-polyfill normalizes this to browser.action or browser.browserAction
-  browser.action.setIcon({ path: iconPaths });
+  try {
+    if (browser.action && browser.action.setIcon) {
+      console.log("Using browser.action.setIcon");
+      browser.action.setIcon({ path: iconPaths });
+    } else if (browser.browserAction && browser.browserAction.setIcon) {
+      console.log("Using browser.browserAction.setIcon");
+      browser.browserAction.setIcon({ path: iconPaths });
+    } else {
+      console.error("Browser action API not available:", {
+        action: browser.action,
+        browserAction: browser.browserAction,
+        manifest: browser.runtime.getManifest(),
+      });
+    }
+  } catch (error) {
+    console.error("Failed to update browser icon:", error);
+    console.error("Icon paths:", iconPaths);
+  }
 }
 
 /**
@@ -120,12 +136,59 @@ browser.downloads.onCreated.addListener(async (downloadItem) => {
     return;
   }
 
+  // Rule 6: Execute Custom JavaScript Filter ---
+  if (settings.customFilterScript) {
+    const safeDownloadInfo = {
+      url: downloadItem.url,
+      filename: downloadItem.filename.split("/").pop().split("\\").pop(),
+      fileSize: downloadItem.totalBytes,
+      mime: downloadItem.mime,
+      referrer: downloadItem.referrer || "",
+    };
+
+    try {
+      const userFunction = new Function(
+        "download",
+        `'use strict'; ${settings.customFilterScript}; return filter(download);`,
+      );
+      const result = userFunction(safeDownloadInfo);
+
+      if (typeof result === "object" && typeof result.skip === "boolean") {
+        if (result.skip) {
+          console.log("Varia Redirect: Skipped by custom user script.");
+          return;
+        }
+
+        console.log("Varia Redirect: Custom script processed.", result);
+        sendToAria2(downloadItem, settings, session, result);
+        return;
+      } else {
+        console.warn(
+          "Varia Redirect: Custom script did not return a valid object. Ignoring.",
+          result,
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Varia Redirect: Error executing custom user script. Skipping redirect.",
+        error,
+      );
+
+      browser.notifications.create(`custom-script-fail-${Date.now()}`, {
+        type: "basic",
+        iconUrl: browser.runtime.getURL("icon/128.png"),
+        title: "Custom Script Error",
+        message: `Your custom filter script failed to execute: ${error.message}`,
+      });
+      return;
+    }
+  }
+
   // --- If all checks pass, send to Aria2 ---
-  console.log(downloadItem, settings, session);
   sendToAria2(downloadItem, settings, session);
 });
 
-async function sendToAria2(downloadItem, settings, session) {
+async function sendToAria2(downloadItem, settings, session, customResult = {}) {
   const headers = settings.persistentHeaders.map((h) => `${h.key}: ${h.value}`);
 
   if (downloadItem.referrer) {
@@ -135,7 +198,7 @@ async function sendToAria2(downloadItem, settings, session) {
     headers.push(`Cookie: ${session.tempCookie}`);
   }
 
-  let finalDir = settings.downloadDirectory || "";
+  let finalDir = customResult.dir || settings.downloadDirectory || "";
 
   // Append date subfolder if enabled (currently the feature may not work)
   if (settings.organizeByDate) {
@@ -153,7 +216,9 @@ async function sendToAria2(downloadItem, settings, session) {
     finalDir = finalDir ? `${finalDir}/${domain}` : domain;
   }
 
-  const filename = downloadItem.filename.split("/").pop().split("\\").pop();
+  const filename =
+    customResult.filename ||
+    downloadItem.filename.split("/").pop().split("\\").pop();
 
   const params = {
     out: filename,
@@ -212,5 +277,67 @@ browser.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === "sync" && changes.rpcUrl) {
     console.log("RPC URL changed: re-testing connection for icon.");
     testConnectionAndSetIcon();
+  }
+});
+
+// Handle messages from options page for testing custom filter scripts
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "TEST_CUSTOM_FILTER") {
+    const { script, testData } = message;
+
+    try {
+      // Execute the user's filter script with test data
+      const userFunction = new Function(
+        "download",
+        `'use strict'; ${script}; return filter(download);`,
+      );
+      const result = userFunction(testData);
+
+      // Validate the result format
+      if (typeof result !== "object" || result === null) {
+        sendResponse({
+          success: false,
+          error: "Function must return an object",
+        });
+        return;
+      }
+
+      if (typeof result.skip !== "boolean") {
+        sendResponse({
+          success: false,
+          error: 'Return object must have a "skip" property that is boolean',
+        });
+        return;
+      }
+
+      if (result.filename && typeof result.filename !== "string") {
+        sendResponse({
+          success: false,
+          error: 'If provided, "filename" must be a string',
+        });
+        return;
+      }
+
+      if (result.dir && typeof result.dir !== "string") {
+        sendResponse({
+          success: false,
+          error: 'If provided, "dir" must be a string',
+        });
+        return;
+      }
+
+      // Test passed
+      sendResponse({
+        success: true,
+        result: result,
+      });
+    } catch (error) {
+      sendResponse({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    return true; // Keep the message channel open for async response
   }
 });

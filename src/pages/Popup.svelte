@@ -152,7 +152,7 @@
 
     <!-- Status Indicator Section -->
     <section
-        class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm flex items-center"
+        class="mb-4 select-none p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm flex items-center"
     >
         <div
             class="flex-shrink-0 w-3 h-3 rounded-full mr-3

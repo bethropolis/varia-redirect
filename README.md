@@ -11,6 +11,30 @@
 
 A browser extension that redirects browser downloads to a local Varia (Aria2) instance with advanced filtering capabilities.
 
+## Features
+- Seamless Download Redirection
+- Real-time Connection Status
+- Custom JavaScript Filters
+- Website Filtering
+- File Extension Control
+- File Size Filtering
+- Directory Organization
+- Custom File Naming
+- Subdirectory Creation
+- Custom HTTP Headers
+- Cookie Management
+- Referrer Preservation
+
+## troubleshooting
+- have an aria2 instance running
+- ensure that the extension has the necessary permissions
+- check the browser console for errors
+- ensure that the extension is enabled and active
+- ensure the extension says " Active and ready to redirect."
+
+## contribution
+ If you'd like to contribute send a pull request, i'll review it.
+
 ## License
 
 MIT License

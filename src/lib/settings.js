@@ -18,6 +18,7 @@
  * @property {string} downloadDirectory - The base directory for downloads
  * @property {boolean} organizeByDomain - Whether to create a subfolder for the domain
  * @property {boolean} organizeByDate - Whether to create a subfolder for the date
+ * @property {string} customFilterScript - User-provided JavaScript for custom filtering
  */
 
 /**
@@ -33,12 +34,11 @@ export const defaultSettings = {
   blockList: ["example.com"],
   allowList: ["github.com"],
   disallowedExtensions: [".exe", ".dmg"],
-  persistentHeaders: [
-    { key: "User-Agent", value: "Varia-Redirect-Extension/1.0" },
-  ],
+  persistentHeaders: [],
   downloadDirectory: "",
   organizeByDomain: false,
   organizeByDate: false,
+  customFilterScript: "",
 };
 
 /**
@@ -90,5 +90,9 @@ export function parseSettings(data) {
       typeof data.organizeByDate === "boolean"
         ? data.organizeByDate
         : defaultSettings.organizeByDate,
+    customFilterScript:
+      typeof data.customFilterScript === "string"
+        ? data.customFilterScript
+        : defaultSettings.customFilterScript,
   };
 }
