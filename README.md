@@ -15,8 +15,9 @@ A browser extension that redirects browser downloads to a local Varia (Aria2) in
 
   | Browser | Download Link |
   |---------|---------------|
-  | Chrome 📥 | [Chrome Extension](https://github.com/bethropolis/varia-redirect/releases/download/v0.1.5/varia-redirect-chrome-v0.1.5.zip) |
-  | Firefox 🦊| [Firefox Extension](https://github.com/bethropolis/varia-redirect/releases/download/v0.1.5/varia-redirect-firefox-v0.1.5.zip) |
+  | Chrome 📥 | [Chrome Extension](https://github.com/bethropolis/varia-redirect/releases/download/v0.1.5/varia-redirect-chrome-v0.1.6.zip) |
+  | Firefox 🦊| [Firefox Extension](https://github.com/bethropolis/varia-redirect/releases/download/v0.1.5/varia-redirect-firefox-v0.1.6.zip) |
+
 
 
 ## Features
@@ -32,6 +33,33 @@ A browser extension that redirects browser downloads to a local Varia (Aria2) in
 - Custom HTTP Headers
 - Cookie Management
 - Referrer Preservation
+
+## Building it yourself
+
+requirements
+- bun or nodejs
+
+To build Varia Redirect yourself, follow these steps:
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/bethropolis/varia-redirect.git
+   cd varia-redirect
+   ```
+
+2. Install dependencies using Bun:
+   ```
+   bun install
+   ```
+
+3. Build the extension:
+   ```
+   bun build
+   ```
+
+This will generate the build files in the appropriate directory. You can then load the unpacked extension in your browser for testing or development.
+
+
 
 ## troubleshooting
 - have an aria2 instance running
