@@ -11,6 +11,14 @@
 
 A browser extension that redirects browser downloads to a local Varia (Aria2) instance with advanced filtering capabilities.
 
+## Installation
+
+  | Browser | Download Link |
+  |---------|---------------|
+  | Chrome 📥 | [Chrome Extension](https://github.com/bethropolis/varia-redirect/releases/download/v0.1.5/varia-redirect-chrome-v0.1.5.zip) |
+  | Firefox 🦊| [Firefox Extension](https://github.com/bethropolis/varia-redirect/releases/download/v0.1.5/varia-redirect-firefox-v0.1.5.zip) |
+
+
 ## Features
 - Seamless Download Redirection
 - Real-time Connection Status
