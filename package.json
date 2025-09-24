@@ -22,7 +22,7 @@
     "@tailwindcss/vite": "^4.1.13",
     "svelte": "^5.39.5",
     "tailwindcss": "^4.1.13",
-    "vite": "^5.4.20",
+    "vite": "^7.1.7",
     "vite-plugin-web-extension": "^4.4.5",
     "webextension-polyfill": "^0.10.0"
   }
